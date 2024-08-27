@@ -7,8 +7,8 @@ def check_condition():
     # To implement later.
     return True
 
-def do_one(bin_path, config, case_path, out_path, timeout, terminate_flag):
-    cmd_args = [bin_path] + config + [case_path, out_path]
+def do_one(bin_path, config, timeout, terminate_flag):
+    cmd_args = [bin_path] + config
     try:
         output = subprocess.check_output(cmd_args,stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=timeout)
         if check_condition():
@@ -21,12 +21,12 @@ def do_one(bin_path, config, case_path, out_path, timeout, terminate_flag):
 def print_error(e):
     print(e)
 
-def parallel_one(case_path, out_path, config_list):
+def parallel_one(config_list):
     with multiprocessing.Manager() as manager:
         terminate_flag = manager.Value('b', False)
         pool = multiprocessing.Pool(processes=os.cpu_count())
         for bin_path, config, tlimit in config_list:
-            pool.apply_async(do_one,((bin_path, config, case_path, out_path, tlimit, terminate_flag)),error_callback=print_error)
+            pool.apply_async(do_one,((bin_path, config, tlimit, terminate_flag)),error_callback=print_error)
         pool.close()
         while True:
             pool.join()
@@ -36,13 +36,16 @@ def parallel_one(case_path, out_path, config_list):
     
 
 if __name__ == "__main__":
-    case_dir = "~/miniCAR/bench/notsafe/6s31.aig"
+    case_dir = "~/miniCAR/bench/notsafe/counterp0.aig" # for test use.
     case_dir = os.path.expanduser(case_dir) # expand ~
 
     output_dir = "output"
+    output_dir = os.path.expanduser(output_dir)
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
     config_list = [
-        ("./minicar", ["--vb"], 3600),
-        ("./minicar", ["-b", "--inter", "2"], 3600),
+        ("./bin/MCAR", ["--vb", f"{case_dir}", f"{output_dir}"], 3600),
+        ("./bin/simplecar", [f"{case_dir}", "-w", f"{output_dir}"], 3600), # change here
         # ..
     ]
-    parallel_one(case_dir, output_dir, config_list)
+    parallel_one(config_list)
