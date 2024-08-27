@@ -1,13 +1,15 @@
-#### Hybrid CAR ####
-HCAR_DIR = src/checkers/hCAR
+#### Mini CAR ####
+MCAR_DIR = src/checkers/MCAR
 
-HCAR: 
-	$(MAKE) -C $(HCAR_DIR) TARGET=HCAR
-	cp $(HCAR_DIR)/HCAR bin
+MCAR: 
+	$(MAKE) -C $(MCAR_DIR) TARGET=MCAR
+	cp $(MCAR_DIR)/MCAR bin
 
 
-SUBDIRS = $(HCAR_DIR) # To be added here
-all: HCAR # To be added here
+
+
+SUBDIRS = $(MCAR_DIR) # To be added here
+all: MCAR # To be added here
 
 	
 clean:
