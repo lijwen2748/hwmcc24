@@ -136,7 +136,7 @@ def main(case_dir, output_dir,verbose):
     tmp_dir = "_tmpRes"
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir)
-        os.mkdir(tmp_dir)
+    os.mkdir(tmp_dir)
 
     path1 = os.path.join(tmp_dir, 'mcar1')
     conf1 = ("./bin/MCAR", ["--vb", f"{case_dir}", f"{path1}"], 
