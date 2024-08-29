@@ -1,3 +1,5 @@
+all: MCAR SIMPLECAR # To be added here
+
 #### Mini CAR ####
 MCAR_DIR = src/checkers/miniCAR
 
@@ -9,7 +11,6 @@ MCAR:
 
 
 #### simple_CAR ####
-
 SIMPLECAR_DIR = simple_CAR
 
 SIMPLECAR:
@@ -19,7 +20,6 @@ SIMPLECAR:
 
 
 SUBDIRS = $(MCAR_DIR) $(SIMPLECAR_DIR) # To be added here
-all: MCAR SIMPLECAR # To be added here
 
 	
 clean:
