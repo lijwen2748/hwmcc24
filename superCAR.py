@@ -273,6 +273,30 @@ def main(case_dir, output_dir, verbose):
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
     )
 
+    path13 = os.path.join(tmp_dir, "mcarlocal2raw")
+    conf13 = (
+        "./bin/MCAR",
+        ["--vb","--inter","2", f"{case_dir}", f"{path13}"],
+        3600,
+        4 * 1024 * 1024 * 1024,  # 4GB memory limit
+    )
+
+    path14 = os.path.join(tmp_dir, "mcarlocal3raw")
+    conf14 = (
+        "./bin/MCAR",
+        ["--vb","--inter","3", f"{case_dir}", f"{path14}"],
+        3600,
+        4 * 1024 * 1024 * 1024,  # 4GB memory limit
+    )
+    
+    path15 = os.path.join(tmp_dir, "mcarmuclow3nosimp")
+    conf15 = (
+        "./bin/MCAR",
+        ["--vb","--inter","1", "--convParam","3", f"{case_dir}", f"{path15}"],
+        3600,
+        4 * 1024 * 1024 * 1024,  # 4GB memory limit
+    )
+
     config_list = [
         conf1,
         conf2,
@@ -286,6 +310,9 @@ def main(case_dir, output_dir, verbose):
         conf10,
         conf11,
         conf12,
+        conf13,
+        conf14,
+        conf15,
     ]
 
     paths_list = [
@@ -301,6 +328,9 @@ def main(case_dir, output_dir, verbose):
         path10,
         path11,
         path12,
+        path13,
+        path14,
+        path15,
     ]
 
     for pt in paths_list:
