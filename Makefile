@@ -1,4 +1,4 @@
-all: MCAR SIMPLECAR # To be added here
+all: MCAR SIMPLECAR SIMPLECAR_CADICAL# To be added here
 
 #### Mini CAR ####
 MCAR_DIR = src/checkers/miniCAR
@@ -16,7 +16,15 @@ SIMPLECAR_DIR = simple_CAR
 SIMPLECAR:
 	$(MAKE) -C $(SIMPLECAR_DIR)
 	mkdir -p bin
-	cp $(SIMPLECAR_DIR)/simplecar bin
+	mv $(SIMPLECAR_DIR)/simplecar bin/simplecar
+
+
+#### simple_CAR CADICAL ####
+
+SIMPLECAR_CADICAL:
+	$(MAKE) -C $(SIMPLECAR_DIR) CADICAL=1
+	mkdir -p bin
+	mv $(SIMPLECAR_DIR)/simplecar bin/simplecar_cadical
 
 
 SUBDIRS = $(MCAR_DIR) $(SIMPLECAR_DIR) # To be added here

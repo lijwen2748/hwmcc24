@@ -9,16 +9,21 @@ pip install --no-index --find-links=./package click
 
 ## Get submodules
 ```
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 ## Build
+Build CaDiCaL lib:
+```
+cd simple_CAR/src/sat/cadical/
+./configure && make
+cd ../../../..
+```
 We use manual-written makefile to build.
 use make to compile all the checkers:
 ```
-make -j4
+make
 ```
-and it will make a new directory `bin`, with binaries (`MCAR` and `simplecar`) in it.
+and it will make a new directory `bin`, with binaries (`MCAR` and `simplecar`s) in it.
 
 ## Run
 Please run at this directory, because the path to binaries(`./bin`) is fixed in the python script.
@@ -35,3 +40,6 @@ Example:
 ```
 python3 hwmcc.py -I xxx.aig -O ./output
 ```
+Safe: ```./output/xxx.w.aag```
+
+UnSafe: ```./output/xxx.cex```
