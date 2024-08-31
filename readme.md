@@ -31,8 +31,7 @@ Usage: hwmcc.py [OPTIONS]
 
 Options:
   -I, --input TEXT   Path to input aiger file  [required]
-  -O, --output TEXT  Path to output cex/cert. Please make sure it's empty.
-                     [required]
+  -O, --output TEXT  Path to output cex/cert. [required]
   -V, --verbose      Turn on printing
   --help             Show help message and exit.
 

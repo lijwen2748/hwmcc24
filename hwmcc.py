@@ -4,6 +4,8 @@ import multiprocessing
 import resource
 import shutil
 import click
+import psutil
+import signal
 
 _verbose = False
 
@@ -18,7 +20,7 @@ def set_memory_limit(memory_limit):
     resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
 
 
-def do_one(bin_path, config, timeout, memory_limit, terminate_flag):
+def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
     cmd_args = [bin_path] + config
     if _verbose:
         print(f"begin : {cmd_args}")
@@ -26,22 +28,34 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag):
         # Set memory limit
         set_memory_limit(memory_limit)
 
-        output = subprocess.check_output(
+        proc = subprocess.Popen(
             cmd_args,
             stdin=None,
             stderr=None,
             shell=False,
             universal_newlines=False,
-            timeout=timeout,
         )
-        if check_condition():
-            terminate_flag.value = True
-        if _verbose:
-            print(f"end : {cmd_args}")
-    except subprocess.TimeoutExpired:
-        pass
-    except subprocess.CalledProcessError as e:
-        print(f"Error in {bin_path}: {e}")
+        pid_list.append(proc.pid)
+        try:
+            output = proc.communicate(timeout=timeout)[0]
+            if check_condition():
+                terminate_flag.value = True
+            if _verbose:
+                print(f"end : {cmd_args}")
+        except subprocess.TimeoutExpired:
+            proc.kill()  # Ensure the process is killed on timeout
+            if _verbose:
+                print(f"Timeout for {cmd_args}")
+        except subprocess.CalledProcessError as e:
+            print(f"Error in {bin_path}: {e}")
+        finally:
+            if proc.poll() is None: # terminated.
+                proc.terminate()
+                proc.wait()
+    except Exception as e:
+        print(f"Unexpected error in {bin_path}: {e}")
+    finally:
+        pid_list.remove(proc.pid)
 
 
 def print_error(e):
@@ -52,6 +66,13 @@ def check_cex(cex_path, aig_path):
     # temp deal
     return False
 
+def terminate_process_tree(pid, include_parent=True):
+    parent = psutil.Process(pid)
+    for child in parent.children(recursive=True):
+        child.kill()
+    if include_parent:
+        parent.kill()
+
 
 def parallel_one(config_list):
     """start a process pool, pass all the args in, and stop if any one terminates.
@@ -61,12 +82,13 @@ def parallel_one(config_list):
     """
     with multiprocessing.Manager() as manager:
         terminate_flag = manager.Value("b", False)
+        pid_list = manager.list()
 
         pool = multiprocessing.Pool(processes=os.cpu_count())
         for bin_path, config, tlimit, mem_limit in config_list:
             pool.apply_async(
                 do_one,
-                (bin_path, config, tlimit, mem_limit, terminate_flag),
+                (bin_path, config, tlimit, mem_limit, terminate_flag, pid_list),
                 error_callback=print_error,
             )
         pool.close()
@@ -74,6 +96,8 @@ def parallel_one(config_list):
             if terminate_flag.value:
                 if _verbose:
                     print("mission complete, process pool terminates")
+                for pid in pid_list:
+                    os.kill(pid, signal.SIGTERM)
                 pool.terminate()
                 break
 
@@ -132,7 +156,7 @@ def collect_res(tmp_dir, output_dir, case_dir):
     "-O",
     "output_dir",
     required=True,
-    help="Path to output cex/cert. Please make sure it's empty.",
+    help="Path to output cex/cert.",
 )
 @click.option(
     "--verbose", "-V", "verbose", default=False, help="Turn on printing", is_flag=True
