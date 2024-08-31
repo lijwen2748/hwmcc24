@@ -4,7 +4,6 @@ import multiprocessing
 import resource
 import shutil
 import click
-import psutil
 import signal
 
 _verbose = False
@@ -65,13 +64,6 @@ def print_error(e):
 def check_cex(cex_path, aig_path):
     # temp deal
     return False
-
-def terminate_process_tree(pid, include_parent=True):
-    parent = psutil.Process(pid)
-    for child in parent.children(recursive=True):
-        child.kill()
-    if include_parent:
-        parent.kill()
 
 
 def parallel_one(config_list):
