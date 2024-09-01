@@ -24,17 +24,22 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
     if _verbose:
         print(f"begin : {cmd_args}")
     try:
-        # Set memory limit
         set_memory_limit(memory_limit)
 
-        proc = subprocess.Popen(
-            cmd_args,
-            stdin=None,
-            stderr=None,
-            shell=False,
-            universal_newlines=False,
-        )
+        try:
+            proc = subprocess.Popen(
+                cmd_args,
+                stdin=None,
+                stderr=None,
+                shell=False,
+                universal_newlines=False,
+            )
+        except Exception as e:
+            print(f"Failed to start process for {bin_path}: {e}")
+            return
+
         pid_list.append(proc.pid)
+
         try:
             output = proc.communicate(timeout=timeout)[0]
             if check_condition():
@@ -54,16 +59,31 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
     except Exception as e:
         print(f"Unexpected error in {bin_path}: {e}")
     finally:
-        pid_list.remove(proc.pid)
+        try:
+            pid_list.remove(proc.pid)
+        except ValueError:
+            pass  # In case the process was already removed.
 
 
 def print_error(e):
-    print(e)
+    print(f"Error in process pool: {e}")
 
 
 def check_cex(cex_path, aig_path):
     # temp deal
     return False
+
+
+def safe_kill(pid):
+    try:
+        os.kill(pid, 0) # a touch. Not really killed
+        os.kill(pid, signal.SIGTERM) # send SIGTERM
+    except ProcessLookupError:
+        pass
+    except PermissionError:
+        print(f"No permission to kill process {pid}")
+    except Exception as e:
+        print(f"Error terminating process {pid}: {e}")
 
 
 def parallel_one(config_list):
@@ -84,14 +104,22 @@ def parallel_one(config_list):
                 error_callback=print_error,
             )
         pool.close()
-        while True:
-            if terminate_flag.value:
-                if _verbose:
-                    print("mission complete, process pool terminates")
-                for pid in pid_list:
-                    os.kill(pid, signal.SIGTERM)
-                pool.terminate()
-                break
+        try:
+            while True:
+                if terminate_flag.value:
+                    if _verbose:
+                        print("mission complete, process pool terminates")
+                    for pid in pid_list:
+                        safe_kill(pid)
+                    pool.terminate()
+                    break
+        except Exception as e:
+            print(f"Error during pool management: {e}")
+            pool.terminate()
+        finally:
+            # Immediately start collecting results after pool termination.
+            # We omit pool.join() as per your requirement.
+            pass
 
 
 def collect_res(tmp_dir, output_dir, case_dir):
