@@ -5,6 +5,7 @@ import resource
 import shutil
 import click
 import signal
+import time
 
 _verbose = False
 
@@ -60,11 +61,6 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
                 proc.wait()
     except Exception as e:
         print(f"Unexpected error in {bin_path}: {e}")
-    finally:
-        try:
-            pid_list.remove(proc.pid)
-        except ValueError:
-            pass  # In case the process was already removed.
 
 
 def print_error(e):
@@ -80,6 +76,8 @@ def safe_kill(pid):
     try:
         os.kill(pid, 0) # a touch. Not really killed
         os.kill(pid, signal.SIGTERM) # send SIGTERM
+        time.sleep(0.5)
+        os.killpg(os.getpgid(pid), signal.SIGKILL)  # Use SIGKILL if SIGTERM doesn't work
     except ProcessLookupError:
         pass
     except PermissionError:
