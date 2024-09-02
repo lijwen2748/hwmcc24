@@ -193,9 +193,8 @@ def main(case_dir, output_dir, verbose):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
     tmp_dir = "_tmpRes"
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
-    os.mkdir(tmp_dir)
+    if not os.path.exists(tmp_dir):
+        os.mkdir(tmp_dir)
 
     path1 = os.path.join(tmp_dir, "mcar1")
     conf1 = (
@@ -354,7 +353,8 @@ def main(case_dir, output_dir, verbose):
     ]
 
     for pt in paths_list:
-        os.mkdir(pt)
+        if not os.path.exists(pt):
+            os.mkdir(pt)
 
     # run them in parallel
     parallel_one(config_list)
