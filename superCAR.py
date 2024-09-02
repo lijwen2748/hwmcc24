@@ -30,7 +30,7 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
             proc = subprocess.Popen(
                 cmd_args,
                 stdin=None,
-                stderr=None,
+                stderr=subprocess.PIPE,
                 shell=False,
                 universal_newlines=False,
             )
@@ -41,8 +41,10 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
         pid_list.append(proc.pid)
 
         try:
-            output = proc.communicate(timeout=timeout)[0]
-            if check_condition():
+            output, error = proc.communicate(timeout=timeout)
+            if _verbose and error is not None and error != b'':
+                print(f"error of {cmd_args} : {error}")
+            if check_condition() and (error is None or error == b''):
                 terminate_flag.value = True
             if _verbose:
                 print(f"end : {cmd_args}")
