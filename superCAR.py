@@ -122,6 +122,10 @@ def parallel_one(config_list):
             pass
 
 
+def file_not_empty(file_path):
+    with open(file_path, 'r') as file:
+        return file.read() != ''
+
 def collect_res(tmp_dir, output_dir, case_dir):
     basename = os.path.basename(case_dir)
     filename = basename.replace(".aig", "").replace(".aag", "")
@@ -129,9 +133,10 @@ def collect_res(tmp_dir, output_dir, case_dir):
     cert_found = False
     cert_path = ""
     for dir in os.listdir(tmp_dir):
-        if os.path.exists(os.path.join(tmp_dir, dir, filename + ".w.aag")):
+        possible_cert_path = os.path.join(tmp_dir, dir, filename + ".w.aag")
+        if os.path.exists(possible_cert_path) and file_not_empty(possible_cert_path):
             cert_found = True
-            cert_path = os.path.join(tmp_dir, dir, filename + ".w.aag")
+            cert_path = possible_cert_path
             if _verbose:
                 print(f"cert found at {cert_path}")
             break
@@ -139,15 +144,17 @@ def collect_res(tmp_dir, output_dir, case_dir):
     cex_found = False
     cex_path = ""
     for dir in os.listdir(tmp_dir):
-        if os.path.exists(os.path.join(tmp_dir, dir, filename + ".cex")):
+        possible_cex_path1 = os.path.join(tmp_dir, dir, filename + ".cex")
+        possible_cex_path2 = os.path.join(tmp_dir, dir, filename + ".res")
+        if os.path.exists(possible_cex_path1) and file_not_empty(possible_cex_path1):
             cex_found = True
-            cex_path = os.path.join(tmp_dir, dir, filename + ".cex")
+            cex_path = possible_cex_path1
             if _verbose:
                 print(f"cex found at {cex_path}")
             break
-        elif os.path.exists(os.path.join(tmp_dir, dir, filename + ".res")):
+        elif os.path.exists(possible_cex_path2) and file_not_empty(possible_cex_path2):
             cex_found = True
-            cex_path = os.path.join(tmp_dir, dir, filename + ".res")
+            cex_path = possible_cex_path2
             if _verbose:
                 print(f"cex found at {cex_path}")
             break
