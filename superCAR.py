@@ -359,9 +359,13 @@ def main(case_dir, output_dir, verbose):
         path15,
     ]
 
+    basename = os.path.basename(case_dir)
+    filename = basename.replace(".aig", "").replace(".aag", "")
     for pt in paths_list:
         if not os.path.exists(pt):
             os.mkdir(pt)
+        if os.path.exists(os.path.join(pt, filename)):
+            os.remove(os.path.exists(os.path.join(pt, filename)))
 
     # run them in parallel
     parallel_one(config_list)
