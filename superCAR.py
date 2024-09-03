@@ -163,7 +163,7 @@ def collect_res(tmp_dir, output_dir, case_dir):
             shutil.copyfile(cert_path, os.path.join(output_dir, filename + ".w.aag"))
     elif cex_found:
         shutil.copyfile(cex_path, os.path.join(output_dir, filename + ".cex"))
-    else:
+    elif cert_found:
         shutil.copyfile(cert_path, os.path.join(output_dir, filename + ".w.aag"))
 
 
