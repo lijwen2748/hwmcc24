@@ -107,20 +107,19 @@ def parallel_one(config_list):
         try:
             while True:
                 if terminate_flag.value:
-                    if _verbose:
-                        print("mission complete, process pool terminates")
                     for pid in pid_list:
                         safe_kill(pid)
                     pool.terminate()
+                    if _verbose:
+                        print("mission complete, process pool terminates")
                     break
+                time.sleep(0.1)
         except Exception as e:
             print(f"Error during pool management: {e}")
             pool.terminate()
         finally:
-            # Immediately start collecting results after pool termination.
-            # We omit pool.join() as per your requirement.
-            pass
-
+            pool.join()
+            
 
 def file_not_empty(file_path):
     with open(file_path, 'r') as file:
