@@ -20,7 +20,7 @@ def set_memory_limit(memory_limit):
     resource.setrlimit(resource.RLIMIT_AS, (memory_limit, memory_limit))
 
 
-def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
+def do_one(bin_path, res_path, filename, config, timeout, memory_limit, terminate_flag, pid_list):
     cmd_args = [bin_path] + config
     if _verbose:
         print(f"begin : {cmd_args}")
@@ -43,9 +43,16 @@ def do_one(bin_path, config, timeout, memory_limit, terminate_flag, pid_list):
 
         try:
             output, error = proc.communicate(timeout=timeout)
+            possible_cex_path1 = os.path.join(res_path, filename+".res")
+            possible_cex_path2 = os.path.join(res_path, filename+".cex")
+            possible_cert_path = os.path.join(res_path, filename+".w.aag")
+            res_outputed = (os.path.exists(possible_cert_path) and file_not_empty(possible_cert_path)) \
+                        or (os.path.exists(possible_cex_path1) and file_not_empty(possible_cex_path1)) \
+                        or (os.path.exists(possible_cex_path2) and file_not_empty(possible_cex_path2)) 
+            # should we copy it to target dir here?
             if _verbose and error is not None and error != b'':
                 print(f"error of {cmd_args} : {error}")
-            if check_condition() and (error is None or error == b''):
+            if check_condition() and (error is None or error == b'') and res_outputed:
                 terminate_flag.value = True
             if _verbose:
                 print(f"end : {cmd_args}")
@@ -86,7 +93,7 @@ def safe_kill(pid):
         print(f"Error terminating process {pid}: {e}")
 
 
-def parallel_one(config_list):
+def parallel_one(config_list, filename):
     """start a process pool, pass all the args in, and stop if any one terminates.
 
     Args:
@@ -97,10 +104,10 @@ def parallel_one(config_list):
         pid_list = manager.list()
 
         pool = multiprocessing.Pool(processes=os.cpu_count())
-        for bin_path, config, tlimit, mem_limit in config_list:
+        for bin_path, config, tlimit, mem_limit, res_path in config_list:
             pool.apply_async(
                 do_one,
-                (bin_path, config, tlimit, mem_limit, terminate_flag, pid_list),
+                (bin_path, res_path, filename, config, tlimit, mem_limit, terminate_flag, pid_list),
                 error_callback=print_error,
             )
         pool.close()
@@ -202,100 +209,115 @@ def main(case_dir, output_dir, verbose):
     if not os.path.exists(tmp_dir):
         os.mkdir(tmp_dir)
 
+    basename = os.path.basename(case_dir)
+    filename = basename.replace(".aig", "").replace(".aag", "")
+
     path1 = os.path.join(tmp_dir, "mcar1")
     conf1 = (
         "./bin/MCAR",
         ["--vb", f"{case_dir}", f"{path1}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path1
     )
 
     path2 = os.path.join(tmp_dir, "fcarbr1")
     conf2 = (
         "./bin/simplecar",
-        ["-v", "1", "-f", "-br", "1", "-rs", "-w", f"{path2}", f"{case_dir}"],
+        ["-f", "-br", "1", "-rs", "-w", f"{path2}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path2
     )
 
     path3 = os.path.join(tmp_dir, "bcarbr1")
     conf3 = (
         "./bin/simplecar",
-        ["-v", "1", "-b", "-br", "1", "-rs", "-w", f"{path3}", f"{case_dir}"],
+        ["-b", "-br", "1", "-rs", "-w", f"{path3}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path3
     )
 
     path4 = os.path.join(tmp_dir, "fcarbr2")
     conf4 = (
         "./bin/simplecar",
-        ["-v", "1", "-f", "-br", "2", "-rs", "-w", f"{path4}", f"{case_dir}"],
+        ["-f", "-br", "2", "-rs", "-w", f"{path4}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path4
     )
 
     path5 = os.path.join(tmp_dir, "bcarbr2")
     conf5 = (
         "./bin/simplecar",
-        ["-v", "1", "-b", "-br", "2", "-rs", "-w", f"{path5}", f"{case_dir}"],
+        ["-b", "-br", "2", "-rs", "-w", f"{path5}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path5
     )
 
     path6 = os.path.join(tmp_dir, "fcarbr3")
     conf6 = (
         "./bin/simplecar",
-        ["-v", "1", "-f", "-br", "3", "-rs", "-w", f"{path6}", f"{case_dir}"],
+        ["-f", "-br", "3", "-rs", "-w", f"{path6}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path6
     )
 
     path7 = os.path.join(tmp_dir, "bcarbr3")
     conf7 = (
         "./bin/simplecar",
-        ["-v", "1", "-b", "-br", "3", "-rs", "-w", f"{path7}", f"{case_dir}"],
+        ["-b", "-br", "3", "-rs", "-w", f"{path7}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path7
     )
 
     path8 = os.path.join(tmp_dir, "bmc")
     conf8 = (
         "./bin/simplecar_cadical",
-        ["-v", "1", "-bmc", "-w", f"{path8}", f"{case_dir}"],
+        ["-bmc", "-w", f"{path8}", f"{case_dir}"],
         3600,
-        16 * 1024 * 1024 * 1024,  # 16GB memory limit
+        24 * 1024 * 1024 * 1024,  # 24GB memory limit
+        path8
     )
 
     path9 = os.path.join(tmp_dir, "fcarcadicalbr1")
     conf9 = (
         "./bin/simplecar_cadical",
-        ["-v", "1", "-f", "-br", "1", "-rs", "-w", f"{path9}", f"{case_dir}"],
+        ["-f", "-br", "1", "-rs", "-w", f"{path9}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path9
     )
 
     path10 = os.path.join(tmp_dir, "bcarcadicalbr1")
     conf10 = (
         "./bin/simplecar_cadical",
-        ["-v", "1", "-b", "-br", "1", "-rs", "-w", f"{path10}", f"{case_dir}"],
+        ["-b", "-br", "1", "-rs", "-w", f"{path10}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path10
     )
 
     path11 = os.path.join(tmp_dir, "bcarcadicalbr2")
     conf11 = (
         "./bin/simplecar_cadical",
-        ["-v", "1", "-b", "-br", "2", "-rs", "-w", f"{path11}", f"{case_dir}"],
+        ["-b", "-br", "2", "-rs", "-w", f"{path11}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path11
     )
 
     path12 = os.path.join(tmp_dir, "bcarcadicalbr3")
     conf12 = (
         "./bin/simplecar_cadical",
-        ["-v", "1", "-b", "-br", "3", "-rs", "-w", f"{path12}", f"{case_dir}"],
+        ["-b", "-br", "3", "-rs", "-w", f"{path12}", f"{case_dir}"],
         3600,
         8 * 1024 * 1024 * 1024,  # 8GB memory limit
+        path12
     )
 
     path13 = os.path.join(tmp_dir, "mcarlocal2raw")
@@ -304,6 +326,7 @@ def main(case_dir, output_dir, verbose):
         ["--vb","--inter","2", f"{case_dir}", f"{path13}"],
         3600,
         4 * 1024 * 1024 * 1024,  # 4GB memory limit
+        path13
     )
 
     path14 = os.path.join(tmp_dir, "mcarlocal3raw")
@@ -312,6 +335,7 @@ def main(case_dir, output_dir, verbose):
         ["--vb","--inter","3", f"{case_dir}", f"{path14}"],
         3600,
         4 * 1024 * 1024 * 1024,  # 4GB memory limit
+        path14
     )
     
     path15 = os.path.join(tmp_dir, "mcarmuclow3nosimp")
@@ -320,6 +344,7 @@ def main(case_dir, output_dir, verbose):
         ["--vb","--inter","1", "--convParam","3", f"{case_dir}", f"{path15}"],
         3600,
         4 * 1024 * 1024 * 1024,  # 4GB memory limit
+        path15
     )
 
     config_list = [
@@ -358,16 +383,19 @@ def main(case_dir, output_dir, verbose):
         path15,
     ]
 
-    basename = os.path.basename(case_dir)
-    filename = basename.replace(".aig", "").replace(".aag", "")
+
     for pt in paths_list:
         if not os.path.exists(pt):
             os.mkdir(pt)
-        if os.path.exists(os.path.join(pt, filename)):
-            os.remove(os.path.exists(os.path.join(pt, filename)))
+        if os.path.exists(os.path.join(pt, filename+".w.aag")):
+            os.remove(os.path.join(pt, filename+".w.aag"))
+        if os.path.exists(os.path.join(pt, filename+".cex")):
+            os.remove(os.path.join(pt, filename+".cex"))
+        if os.path.exists(os.path.join(pt, filename+".res")):
+            os.remove(os.path.join(pt, filename+".res"))
 
     # run them in parallel
-    parallel_one(config_list)
+    parallel_one(config_list, filename)
 
     # collect the result.
     collect_res(tmp_dir, output_dir, case_dir)
