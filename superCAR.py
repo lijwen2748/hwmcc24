@@ -84,7 +84,7 @@ def safe_kill(pid):
         os.kill(pid, 0) # a touch. Not really killed
         os.kill(pid, signal.SIGTERM) # send SIGTERM
         time.sleep(0.5)
-        os.killpg(os.getpgid(pid), signal.SIGKILL)  # Use SIGKILL if SIGTERM doesn't work
+        # os.killpg(os.getpgid(pid), signal.SIGKILL)  # Use SIGKILL if SIGTERM doesn't work
     except ProcessLookupError:
         pass
     except PermissionError:
